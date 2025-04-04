@@ -4,6 +4,15 @@ import { invoices, customers, revenue, users } from '../lib/placeholder-data';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
+async function printTableData(tableName: string) {
+  // Realizamos una consulta SELECT para obtener algunos registros
+  const result = await sql`
+    SELECT * FROM ${sql(tableName)} LIMIT 5;  -- Limita los resultados a 5 para evitar exceso de datos
+  `;
+  console.log(`Data from ${tableName}:`, result);
+  return result; // Retorna los registros obtenidos
+}
+
 async function seedUsers() {
   await sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
   await sql`
@@ -15,6 +24,13 @@ async function seedUsers() {
     );
   `;
 
+  // Imprimir los datos de la tabla 'users' si ya existen
+  const usersData = await printTableData('users');
+  if (usersData.length > 0) {
+    console.log('Users table already has data');
+    return;
+  }
+
   const insertedUsers = await Promise.all(
     users.map(async (user) => {
       const hashedPassword = await bcrypt.hash(user.password, 10);
@@ -25,7 +41,7 @@ async function seedUsers() {
       `;
     }),
   );
-
+ 
   return insertedUsers;
 }
 
@@ -41,6 +57,13 @@ async function seedInvoices() {
       date DATE NOT NULL
     );
   `;
+
+  // Imprimir los datos de la tabla 'invoices' si ya existen
+  const invoicesData = await printTableData('invoices');
+  if (invoicesData.length > 0) {
+    console.log('Invoices table already has data');
+    return;
+  }
 
   const insertedInvoices = await Promise.all(
     invoices.map(
@@ -67,6 +90,13 @@ async function seedCustomers() {
     );
   `;
 
+  // Imprimir los datos de la tabla 'customers' si ya existen
+  const customersData = await printTableData('customers');
+  if (customersData.length > 0) {
+    console.log('Customers table already has data');
+    return;
+  }
+
   const insertedCustomers = await Promise.all(
     customers.map(
       (customer) => sql`
@@ -87,6 +117,13 @@ async function seedRevenue() {
       revenue INT NOT NULL
     );
   `;
+
+  // Imprimir los datos de la tabla 'revenue' si ya existen
+  const revenueData = await printTableData('revenue');
+  if (revenueData.length > 0) {
+    console.log('Revenue table already has data');
+    return;
+  }
 
   const insertedRevenue = await Promise.all(
     revenue.map(
@@ -112,6 +149,7 @@ export async function GET() {
 
     return Response.json({ message: 'Database seeded successfully' });
   } catch (error) {
+    console.log(sql)
     return Response.json({ error }, { status: 500 });
   }
 }
